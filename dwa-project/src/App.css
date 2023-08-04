@@ -1,0 +1,152 @@
+/* Example CSS styling */
+.show-preview {
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.podcast-item {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  cursor: pointer;
+}
+
+.podcast-item1 {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.podcast-item2,
+.podcast-item3,
+.podcast-item4,
+.podcast-item5 {
+  font-size: 14px;
+}
+
+.show-more-button {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.show-less {
+  background-color: #dc3545;
+}
+
+.show-more {
+  background-color: #007bff;
+}
+
+/* App.css */
+.navbar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #333;
+  padding: 10px;
+  color: white;
+}
+
+.navbar-center {
+  display: flex;
+  align-items: center;
+}
+
+.navbar select,
+.navbar input {
+  margin-right: 10px;
+  padding: 5px;
+  font-size: 16px;
+}
+
+.navbar select {
+  background-color: white;
+  color: #333;
+  border: none;
+}
+
+.navbar input {
+  background-color: transparent;
+  color: white;
+  border: 1px solid white;
+}
+
+/* Main Content */
+.main-content {
+  padding: 20px;
+}
+  
+
+/*login styling*/
+
+/* Login.css */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.login-form {
+  background-color: #f5f5f5;
+  border-radius: 6px;
+  padding: 20px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  max-width: 300px;
+  width: 100%;
+}
+
+.form-group {
+  margin-bottom: 10px;
+}
+
+label {
+  display: block;
+  font-weight: bold;
+}
+
+.input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.btn-login {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 15px;
+  cursor: pointer;
+  width: 100%;
+  font-size: 16px;
+}
+
+.btn-login:hover {
+  background-color: #0056b3;
+}
+
+.btn-login:focus {
+  outline: none;
+}
+
+/* Optional: Center the form horizontally */
+/* If you have other components in your login page, you may want to adjust this */
+@media (min-width: 768px) {
+  .login-container {
+    justify-content: center;
+  }
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+}
+
+
+
