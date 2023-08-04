@@ -79,8 +79,8 @@ const Login = ({ onLogin, setShowAuth }) => {
 
 
     
-    <div className="login">
-      <header className="App-Header">
+    <div >
+      <header >
         <Auth
           supabaseClient={supabase}
           appearance={{ theme: ThemeSupa }}

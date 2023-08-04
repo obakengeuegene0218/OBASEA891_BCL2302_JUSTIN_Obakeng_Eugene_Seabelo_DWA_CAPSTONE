@@ -1,156 +1,17 @@
-// import React from 'react'
-// import  {  useState, useEffect } from 'react';
-// import { fetchShowPreviews } from './data';
-// import ShowPreview from './components/preview';
-// import './App.css';
-// import FavoritesList from './components/FavoriteList'
-// import AudioPlayer from './components/AudioPlayer'
 
-
-// const App = () => {
-//   const [showPreviews, setShowPreviews] = React.useState([]);
-
-//   useEffect(() => {
-//     const getShowPreviews = async () => {
-//       try {
-//         const previews = await fetchShowPreviews();
-//         setShowPreviews(previews);
-//       } catch (error) {
-//         console.error('Error fetching show previews:', error);
-//       }
-//     };
-//     getShowPreviews();
-//   }, []);
-
-
-//   return (
-//     <div className="app">
-//       <header>
-//         <h1 className='head'>Podcast App</h1>
-//       </header>
-//       <main>
-//         {showPreviews.map(show => (
-//           <ShowPreview key={show.id} show={show} />
-//         ))}
-//       </main>
-//     </div>
-//   );
-// };
-
-// export default App;
-
-// App.js
-// import React, { useState, useEffect } from 'react';
-// import { fetchShowPreviews } from './data';
-// import ShowPreview from './components/preview';
-// // import FavoritesList from './components/FavoriteList';
-// import './App.css';
-// import AudioPlayer from './components/AudioPlayer';
-
-// const App = () => {
-//   const [showPreviews, setShowPreviews] = React.useState([]);
-//   const [favorites, setFavorites] = useState([]);
-//   const [sortBy, setSortBy] = useState('');
-//   const [searchQuery, setSearchQuery] = useState('');
-
-
-//   const handleSearch = () => {
-//     // Filter the showPreviews based on the searchQuery
-//     const filteredShows = showPreviews.filter((show) => {
-//       const title = show.title.toLowerCase();
-//       const description = show.description.toLowerCase();
-//       const genres = show.genres.map((genre) => genre.toLowerCase());
-
-//       return title.includes(searchQuery.toLowerCase()) || description.includes(searchQuery.toLowerCase()) || genres.includes(searchQuery.toLowerCase());
-//     });
-
-//     // Update the showPreviews state with the filtered shows
-//     setShowPreviews(filteredShows);
-//   };
-
-  
-//   useEffect(() => {
-//     const getShowPreviews = async () => {
-//       try {
-//         const previews = await fetchShowPreviews();
-//         setShowPreviews(previews);
-//       } catch (error) {
-//         console.error('Error fetching show previews:', error);
-//       }
-//     };
-//     getShowPreviews();
-//   }, []);
-
-//   const sortShows = (criteria) => {
-//     setSortBy(criteria);
-//     let sortedShows = [...showPreviews];
-
-//     switch (criteria) {
-//       case 'titleAZ':
-//         sortedShows.sort((a, b) => a.title.localeCompare(b.title));
-//         break;
-//       case 'titleZA':
-//         sortedShows.sort((a, b) => b.title.localeCompare(a.title));
-//         break;
-//       case 'dateUpdatedAscending':
-//         sortedShows.sort((a, b) => new Date(a.updated) - new Date(b.updated));
-//         break;
-//       case 'dateUpdatedDescending':
-//         sortedShows.sort((a, b) => new Date(b.updated) - new Date(a.updated));
-//         break;
-//       default:
-//         break;
-//     }
-
-//     setShowPreviews(sortedShows);
-//   };
-
-//   const removeFromFavorites = (episodeId) => {
-//     setFavorites(favorites.filter((id) => id !== episodeId));
-//   };
-
-//   return (
-//     <div className="app">
-//       <header>
-//         <h1 className="head">Podcast App</h1>
-//         <div>
-//           <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search Podcasts" />
-//           <button onClick={handleSearch}>Search</button>
-//         </div>
-//       </header>
-//       <main>
-//         <div>
-//           <h2>Shows</h2>
-//           <div>
-//             <button onClick={() => sortShows('titleAZ')}>Sort by Title A-Z</button>
-//             <button onClick={() => sortShows('titleZA')}>Sort by Title Z-A</button>
-//             <button onClick={() => sortShows('dateUpdatedAscending')}>Sort by Date Updated (Ascending)</button>
-//             <button onClick={() => sortShows('dateUpdatedDescending')}>Sort by Date Updated (Descending)</button>
-//           </div>
-//           {showPreviews.map((show) => (
-//             <ShowPreview key={show.id} show={show} favorites={favorites} setFavorites={setFavorites} />
-//           ))}
-//         </div>
-//         <FavoritesList
-//           favorites={favorites}
-//           showPreviews={showPreviews}
-//           removeFromFavorites={removeFromFavorites}
-//         />
-//       </main>
-//     </div>
-//   );
-// };
-
-// // export default App;
-// import React, { useState, useEffect } from 'react';
 // App.jsx
+//App.jsx
 import React, { useState, useEffect, Fragment } from 'react';
-import { fetchShowPreviews } from './data';
+import { fetchShowPreviews, fetchShowDetails } from './data';
 import ShowPreview from './components/preview';
 import FavoritesList from './components/FavoriteList';
 import Navbar from './components/Navbar';
 import Login from './components/Login';
 import { supabase } from './supabaseClient';
+import './App.css';
+import Fuse from 'fuse.js'; // Import the Fuse.js library for fuzzy searching
+import Hero from './components/Hero'
+
 
 const App = () => {
   const [showPreviews, setShowPreviews] = useState([]);
@@ -164,24 +25,30 @@ const App = () => {
   const [originalShowPreviews, setOriginalShowPreviews] = useState([]);
   const [isLoggedIn, setIsLoggedIn] = useState('signUpPhase');
   const [selectedSeason, setSelectedSeason] = useState(null);
-  const [selectedSeasons, setSelectedSeasons] = useState([]); // New state for selected seasons
+  const [selectedGenre, setSelectedGenre] = useState(null); // State for selected genre
 
   const handleSearch = () => {
     const trimmedQuery = searchQuery.trim();
+
     if (trimmedQuery === '') {
       setShowPreviews(originalShowPreviews);
     } else {
-      const genreMatched = originalShowPreviews.filter((show) => {
-        const genres = show.genres.map((genre) => genre.toLowerCase());
-        return typeof show.genre === 'string' && genres.includes(trimmedQuery.toLowerCase());
-      });
+      let filteredPreviews = [...originalShowPreviews];
 
-      const titleMatched = originalShowPreviews.filter((show) => {
-        const title = show.title.toLowerCase();
-        return title.includes(trimmedQuery.toLowerCase());
-      });
+      // Filter by search query using Fuse.js
+      if (searchQuery) {
+        const fuse = new Fuse(filteredPreviews, { keys: ['title'] });
+        filteredPreviews = fuse.search(searchQuery).map((result) => result.item);
+      }
 
-      setShowPreviews(genreMatched.length > 0 ? genreMatched : titleMatched);
+      // Filter by genre (assuming you have selectedGenre as a state variable)
+      if (selectedGenre) {
+        filteredPreviews = filteredPreviews.filter((preview) =>
+          preview.genres.includes(parseInt(selectedGenre))
+        );
+      }
+
+      setShowPreviews(filteredPreviews);
     }
   };
 
@@ -238,18 +105,25 @@ const App = () => {
     setFavorites((prevFavorites) => prevFavorites.filter((favorite) => favorite.id !== showId));
   };
 
-  const handleShowClick = (showId) => {
-    const selectedShow = showPreviews.find((show) => show.id === showId);
-    setSelectedShow(selectedShow); // Set the selected show here
-    setSelectedSeason(null); // Reset the selected season to null when a new show is selected
-    setView('showDetail');
+  const handleShowClick = async (showId) => {
+    try {
+      setLoading(true);
+      const data = await fetchShowDetails(showId);
+      setSelectedShow(data);
+      setSelectedSeason(null);
+      setView('showDetail');
+    } catch (error) {
+      console.error('Error fetching show details:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSeasonClick = (seasonNumber) => {
     setSelectedSeason(seasonNumber);
   };
 
-  useEffect(() => {
+  React.useEffect(() => {
     const authListener = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
         console.log('User signed in successfully:', session.user.email);
@@ -267,7 +141,7 @@ const App = () => {
 
   return (
     <>
-      <div className="app">
+      <div className="app-container">
         <header>
           <h1 className="head">Podcast App</h1>
         </header>
@@ -278,13 +152,14 @@ const App = () => {
           onSearch={handleSearch}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
+          setSelectedGenre={setSelectedGenre} // Pass the setSelectedGenre function to the Navbar
         />
         <main>
           {isLoggedIn === 'signUpPhase' && <Login onLogin={() => setIsLoggedIn('startPhase')} />}
           {isLoggedIn === 'startPhase' && (
             <div>
               {view === 'showDetail' && selectedShow ? (
-                <div className="seas-data-container">
+                <div className="episodes-container">
                   <button onClick={() => setView('startPhase')}>Back to Show List</button>
                   <div>
                     <h2>{selectedShow.title}</h2>
@@ -305,8 +180,8 @@ const App = () => {
                             ))}
                           </ul>
                         ) : (
-                          <div>
-                            <img className="seas" src={season.image} alt={`Season ${season.number}`} />
+                          <div className='image--'>
+                            <img className="showImg" src={season.image} alt={`Season ${season.number}`} />
                             <div>{season.episodes.length} Episodes</div>
                             <button onClick={() => handleSeasonClick(season.number)}>View Episodes</button>
                           </div>
@@ -318,6 +193,7 @@ const App = () => {
               ) : (
                 <>
                   <h2>Shows</h2>
+                  <Hero/>
                   {showPreviews.map((show) => (
                     <ShowPreview key={show.id} show={show} favorites={favorites} setFavorites={setFavorites} handleShowClick={handleShowClick} />
                   ))}
@@ -335,82 +211,3 @@ const App = () => {
 export default App;
 
 
-
-
-
-
-
-// import React, { useState, useEffect } from 'react';
-// App.jsx
-
-
-//   if (!showData) {
-//     return (
-//       <div className="podcast-data-container">
-//         <Header
-//         searchQuery={searchQuery}
-//         handleSearchChange={handleSearchChange}
-//         sortBy={sortBy}
-//         handleSortChange={handleSortChange}
-//       />
-//         <ul className="preview-list">
-//           {filteredData.map((show) => (
-//         <li key={show.id} className="preview-item">
-//             <div className="image">
-//               <img src={show.image} alt={show.title} className="preview-image" />
-//               <div className="dots">
-//                 <div></div>
-//                 <div></div>
-//                 <div></div>
-//               </div>
-//             </div>
-//             <div className="infos">
-//               <h3>Title:{show.title}</h3>
-//               <p>Seasons:{show.seasons}</p>
-//             </div>
-//             <button onClick={() => toggleDescription(show.id)}>Description</button>
-//             <button onClick={() => handleShowClick(show.id)}>Seasons</button>
-//             {selectedPreviewId === show.id && (
-//               <div className="preview-description">{show.description}</div>
-//             )}
-//         </li>
-//           ))}
-//         </ul>
-//       </div>
-//     );
-//   }
-//   return (
-//     <div className="seas-data-container">
-//       <button onClick={() => setShowData(null)}>Back to Show List</button>
-//       <div>
-//         <h2>{showData.title}</h2>
-//         {showData.seasons.map((season) => (
-//           <div key={season.number}>
-//             <h3>Season {season.number}</h3>
-//             {selectedSeason === season.number ? (
-//               <ul>
-//                 {season.episodes.map((episode) => (
-//                   <Fragment key={episode.id}>
-//                     <h4>{episode.name}</h4>
-//                   <li>{episode.title}</li>
-//                   <p>{episode.description}</p>
-//                   <audio controls>
-//                 <source src ={episode.file}/>
-//                   </audio>
-//                   </Fragment>
-//                 ))}
-//               </ul>
-//             ) : (
-//               <div>
-//                 <img className='seas' src={season.image} alt={`Season ${season.number}`} />
-//                 <div>{season.episodes.length} Episodes</div>
-//                 <button onClick={() => handleSeasonClick(season.number)}>View Episodes</button>
-//               </div>
-//             )}
-//           </div>
-//         ))}
-//       </div>
-//     </div>
-//   );
-// };
-// export default PodcastData;

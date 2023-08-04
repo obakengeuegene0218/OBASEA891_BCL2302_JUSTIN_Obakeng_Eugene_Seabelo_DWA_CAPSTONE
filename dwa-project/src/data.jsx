@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-
+// import axios from 'axios'; 
 const BASE_URL = 'https://podcast-api.netlify.app';
 
 export const fetchShowPreviews = async () => {
@@ -7,22 +7,14 @@ export const fetchShowPreviews = async () => {
   const data = await response.json();
   return data;
 };
-
-export const fetchShowDetails = async (showId, setLoading, setSelectedShow, setSelectedSeason) => {
+export const fetchShowDetails = async (showId) => {
   try {
-    setLoading(true);
     const response = await fetch(`${BASE_URL}/id/${showId}`);
     const data = await response.json();
-    setSelectedShow(data);
-    setSelectedSeason(null);
-
-    // Extract and store the seasons separately in the state
-    setSelectedSeasons(data.seasons || []);
-
-    setLoading(false);
+    data.seasons = data.seasons || [];
+    return data;
   } catch (error) {
-    console.error('Error fetching show details:', error);
-    setLoading(false);
+    throw new Error('Error fetching show details:', error);
   }
 };
 

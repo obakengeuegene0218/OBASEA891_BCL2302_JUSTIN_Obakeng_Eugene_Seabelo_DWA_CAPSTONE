@@ -1,26 +1,73 @@
 // FavoritesList.js
 
+// User.jsx
 import React from 'react';
+import { supabase } from '../supabaseClient';
 
-
-const User = () => {
+const User = ({ selectedShow }) => {
   const [favorites, setFavorites] = React.useState([]);
   const [newFavorite, setNewFavorite] = React.useState('');
   const [sortingType, setSortingType] = React.useState('name'); // 'name' or 'date'
   const [sortingOrder, setSortingOrder] = React.useState('ascending'); // 'ascending' or 'descending'
 
+  React.useEffect(() => {
+    // Load favorites from the Supabase database when the component mounts
+    fetchFavoritesFromDatabase();
+  }, []);
+
+  const fetchFavoritesFromDatabase = async () => {
+    try {
+      // Fetch favorites data from the 'favorites' table in the Supabase database
+      const { data, error } = await supabase.from('favorites').select('*');
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      setFavorites(data);
+    } catch (error) {
+      console.error('Error fetching favorites:', error);
+    }
+  };
+
+  const saveFavoriteToDatabase = async (newFav) => {
+    try {
+      // Insert the new favorite into the 'favorites' table in the Supabase database
+      const { data, error } = await supabase.from('favorites').insert([newFav]);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      // Update the state with the newly inserted favorite from the database
+      setFavorites([...favorites, data[0]]);
+    } catch (error) {
+      console.error('Error saving favorite to database:', error);
+    }
+  };
 
   const handleAddFavorite = () => {
-    if (newFavorite.trim() === '') return;
+    if (!selectedShow) {
+      // If no selected show, return early
+      return;
+    }
 
-    if (!favorites.some((fav) => fav.name === newFavorite)) {
+    const { title, seasons } = selectedShow;
+
+    if (newFavorite.trim() === '') {
+      return;
+    }
+
+    const seasonNames = seasons.map((season) => `Season ${season.number}`);
+    const showNames = [title, ...seasonNames];
+
+    if (!favorites.some((fav) => showNames.includes(fav.name))) {
       const newFav = {
-        name: newFavorite,
+        name: newFavorite.trim(),
         date: new Date().toISOString(),
       };
 
       // Save the new favorite to both state and the Supabase database
-      setFavorites([...favorites, newFav]);
       saveFavoriteToDatabase(newFav);
 
       setNewFavorite('');
@@ -46,7 +93,6 @@ const User = () => {
   };
 
   const formatDate = (date) => {
-
     const parsedDate = new Date(date);
     const year = parsedDate.getFullYear();
     const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
@@ -74,7 +120,7 @@ const User = () => {
   });
 
   return (
-    <div className='epi-favor'>
+    <div className="epi-favor">
       <h2 className="h2-favourites">User Favorites</h2>
       <div className="add-favorites">
         <input
@@ -87,29 +133,17 @@ const User = () => {
         <button onClick={handleAddFavorite} className="btn-favours">
           Add Favorite
         </button>
-
       </div>
-
 
       <div>
         <label htmlFor="sortingType">Sort by:</label>
-        <select
-          id="sortingType"
-          name="sortingType"
-          value={sortingType}
-          onChange={handleSortingTypeChange}
-        >
+        <select id="sortingType" name="sortingType" value={sortingType} onChange={handleSortingTypeChange}>
           <option value="name">Name</option>
           <option value="date">Date</option>
         </select>
 
         <label htmlFor="sortingOrder">Order:</label>
-        <select
-          id="sortingOrder"
-          name="sortingOrder"
-          value={sortingOrder}
-          onChange={handleSortingOrderChange}
-        >
+        <select id="sortingOrder" name="sortingOrder" value={sortingOrder} onChange={handleSortingOrderChange}>
           <option value="ascending">Ascending</option>
           <option value="descending">Descending</option>
         </select>
@@ -126,10 +160,11 @@ const User = () => {
         ))}
       </ul>
 
-      <div className='auth'>
-        <button onClick={handleLoggingToSupabase} className='check-fav'>Check Favorites</button>
+      <div className="auth">
+        <button onClick={handleLoggingToSupabase} className="check-fav">
+          Check Favorites
+        </button>
       </div>
-
     </div>
   );
 };
