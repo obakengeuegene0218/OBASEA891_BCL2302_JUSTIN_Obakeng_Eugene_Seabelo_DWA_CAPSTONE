@@ -7,6 +7,10 @@ export const fetchShowPreviews = async () => {
   const data = await response.json();
   return data;
 };
+
+
+
+
 export const fetchShowDetails = async (showId) => {
   try {
     const response = await fetch(`${BASE_URL}/id/${showId}`);

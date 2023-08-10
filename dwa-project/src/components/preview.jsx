@@ -1,5 +1,5 @@
-// preview.js
-// preview.js
+
+
 import React, { useState } from 'react';
 
 const genreTitleMapping = {
@@ -14,16 +14,11 @@ const genreTitleMapping = {
   9: 'Kids and Family',
 };
 
-const ShowPreview = ({ show, favorites, setFavorites, handleShowClick }) => {
+const ShowPreview = ({ show, favoriteEpisodes, addToFavoriteEpisodes, handleShowClick }) => {
   const [showDetails, setShowDetails] = useState(false);
 
   const handleShowDetail = () => {
     setShowDetails(!showDetails);
-  };
-
-  const handleAddToFavorites = () => {
-    // Add the current show to favorites list
-    setFavorites((prevFavorites) => [...prevFavorites, show]);
   };
 
   const formatDate = (dateString) => {
@@ -31,16 +26,31 @@ const ShowPreview = ({ show, favorites, setFavorites, handleShowClick }) => {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
+  const handleAddToFavorites = (episodeId) => {
+    // Check if the episode is already in the favoriteEpisodes list
+    if (!favoriteEpisodes.some((fav) => fav.id === episodeId)) {
+      // Find the episode in the show's seasons
+      const episodeToAdd = show.seasons
+        .flatMap((season) => season.episodes)
+        .find((episode) => episode.id === episodeId);
+
+      if (episodeToAdd) {
+        // Call the addToFavoriteEpisodes function from props
+        addToFavoriteEpisodes(episodeToAdd);
+      }
+    }
+  };
+
   return (
     <div className="show-preview">
       <img className="showImg" src={show.image} alt={show.title} onClick={handleShowDetail} />
       <h2 className="p-Title">{show.title}</h2>
-      <p className="podcast-item2">Seasons: {show.seasons}</p>
+      <p className="podcast-item2">Seasons: {show.seasons.length}</p>
       <p className="podcast-item3">Last Updated: {formatDate(show.updated)}</p>
       <p className="podcast-item4">Genres: {show.genres.map((genreId) => genreTitleMapping[genreId]).join(', ')}</p>
       {showDetails && <p className="podcast-item5">Description: {show.description}</p>}
-      <button className ="favorites" onClick={handleAddToFavorites}>Add to Favorites</button>
-      <button onClick={() => handleShowClick(show.id)} className ="View-seasons">View Seasons</button>
+      <button className="favorites" onClick={() => handleAddToFavorites(show.id)}>Add to Favorites</button>
+      <button onClick={() => handleShowClick(show.id)} className="View-seasons">View Seasons</button>
     </div>
   );
 };

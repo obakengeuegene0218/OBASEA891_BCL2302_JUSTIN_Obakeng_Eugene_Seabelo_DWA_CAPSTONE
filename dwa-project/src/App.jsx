@@ -1,6 +1,4 @@
-
-// App.jsx
-//App.jsx
+// Import necessary modules and components
 import React, { useState, useEffect, Fragment } from 'react';
 import { fetchShowPreviews, fetchShowDetails } from './data';
 import ShowPreview from './components/preview';
@@ -10,14 +8,14 @@ import Login from './components/Login';
 import { supabase } from './supabaseClient';
 import './App.css';
 import Fuse from 'fuse.js'; // Import the Fuse.js library for fuzzy searching
-import Hero from './components/Hero'
+import Hero from './components/Hero';
 
 
 const App = () => {
+  // State variables using React hooks
   const [showPreviews, setShowPreviews] = useState([]);
   const [view, setView] = useState('login');
   const [favorites, setFavorites] = useState([]);
-  const [sortBy, setSortBy] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedShow, setSelectedShow] = useState(null);
   const [user, setUser] = useState(null);
@@ -26,39 +24,60 @@ const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState('signUpPhase');
   const [selectedSeason, setSelectedSeason] = useState(null);
   const [selectedGenre, setSelectedGenre] = useState(null); // State for selected genre
+  const [favoriteShows, setFavoriteShows] = useState([]);
+  const [favoriteEpisodes, setFavoriteEpisodes] = useState([]);
 
+
+
+
+  // Add to favorite shows
+  const addToFavoriteShows = (show) => {
+    setFavoriteShows((prevFavorites) => [...prevFavorites, show]);
+  };
+
+
+
+  // Remove from favorite shows
+  const removeFromFavoriteShows = (showId) => {
+    setFavoriteShows((prevFavorites) => prevFavorites.filter((fav) => fav.id !== showId));
+  };
+
+
+
+
+
+  // Function to handle search
   const handleSearch = () => {
     const trimmedQuery = searchQuery.trim();
-
+  
     if (trimmedQuery === '') {
       setShowPreviews(originalShowPreviews);
     } else {
-      let filteredPreviews = [...originalShowPreviews];
-
-      // Filter by search query using Fuse.js
-      if (searchQuery) {
-        const fuse = new Fuse(filteredPreviews, { keys: ['title'] });
-        filteredPreviews = fuse.search(searchQuery).map((result) => result.item);
-      }
-
-      // Filter by genre (assuming you have selectedGenre as a state variable)
-      if (selectedGenre) {
-        filteredPreviews = filteredPreviews.filter((preview) =>
-          preview.genres.includes(parseInt(selectedGenre))
-        );
-      }
-
+      const fuse = new Fuse(originalShowPreviews, { keys: ['title', 'keywords'] });
+      const searchResults = fuse.search(trimmedQuery); // Use trimmedQuery instead of searchQuery
+  
+      const filteredPreviews = searchResults.map((result) => result.item);
+  
       setShowPreviews(filteredPreviews);
     }
   };
+  
+  
+  
+  
 
+
+
+
+
+  // Fetch show previews on component mount
   useEffect(() => {
     const getShowPreviews = async () => {
       setLoading(true);
       try {
         const previews = await fetchShowPreviews();
         setShowPreviews(previews);
-        setOriginalShowPreviews(previews); // Store the original previews in state
+        setOriginalShowPreviews(previews);
       } catch (error) {
         console.error('Error fetching show previews:', error);
       } finally {
@@ -68,8 +87,13 @@ const App = () => {
     getShowPreviews();
   }, []);
 
+
+
+
+
+
+  // Function to handle sorting of shows
   const handleSort = (criteria) => {
-    setSortBy(criteria);
     const sortedShows = [...showPreviews];
 
     switch (criteria) {
@@ -85,26 +109,31 @@ const App = () => {
       case 'dateUpdatedDescending':
         sortedShows.sort((a, b) => new Date(b.updated) - new Date(a.updated));
         break;
+      case 'genre':
+        if (selectedGenre) {
+          sortedShows.sort((a, b) => a.genres.includes(parseInt(selectedGenre)) ? -1 : 1);
+        }
+        break;
       default:
-        // If the criteria is not recognized, do nothing or provide a default sorting
         break;
     }
 
     setShowPreviews(sortedShows);
   };
 
-  const handleShowFavorites = () => {
-    if (isLoggedIn === 'favoritesList') {
-      setView('startPhase'); // If already in favorites list view, go back to show list
-    } else {
-      setView('favoritesList'); // If not, switch to favorites list view
-    }
+
+
+
+
+
+  // Function to remove a show from favorites
+  const removeFromFavoriteEpisodes = (episodeId) => {
+    setFavoriteEpisodes((prevFavorites) => prevFavorites.filter((fav) => fav.id !== episodeId));
   };
 
-  const removeFromFavorites = (showId) => {
-    setFavorites((prevFavorites) => prevFavorites.filter((favorite) => favorite.id !== showId));
-  };
 
+
+  // Function to handle clicking on a show to view details
   const handleShowClick = async (showId) => {
     try {
       setLoading(true);
@@ -119,22 +148,46 @@ const App = () => {
     }
   };
 
+
+
+
+  // Function to handle clicking on a season to view episodes
   const handleSeasonClick = (seasonNumber) => {
     setSelectedSeason(seasonNumber);
   };
 
-  React.useEffect(() => {
+
+
+
+  // Authentication listener to update login status
+  useEffect(() => {
     const authListener = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
         console.log('User signed in successfully:', session.user.email);
         setIsLoggedIn('startPhase');
       }
     });
-    // return () => {
-    //   authListener.unsubscribe();
-    // };
+    return () => {
+      // authListener.unsubscribe();
+    };
   }, []);
 
+  // Function to handle genre change
+  
+  const handleGenreChange = (genre) => {
+    setSelectedGenre(genre);
+  
+    // Filter show previews based on selected genre
+    const filteredShows = originalShowPreviews.filter((preview) =>
+      genre === '' || preview.genres.includes(parseInt(genre))
+    );
+  
+    setShowPreviews(filteredShows); // Use setShowPreviews instead of setFilteredPreviews
+  };
+  
+
+
+  // Conditional rendering based on loading state
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -152,8 +205,12 @@ const App = () => {
           onSearch={handleSearch}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
-          setSelectedGenre={setSelectedGenre} // Pass the setSelectedGenre function to the Navbar
-        />
+          setSelectedGenre={setSelectedGenre}
+          favoriteShows={favoriteShows}
+          addToFavoriteShows={addToFavoriteShows}
+          removeFromFavoriteShows={removeFromFavoriteShows}
+          onGenreChange={handleGenreChange}
+/>
         <main>
           {isLoggedIn === 'signUpPhase' && <Login onLogin={() => setIsLoggedIn('startPhase')} />}
           {isLoggedIn === 'startPhase' && (
@@ -180,7 +237,7 @@ const App = () => {
                             ))}
                           </ul>
                         ) : (
-                          <div className='image--'>
+                          <div className="image--">
                             <img className="showImg" src={season.image} alt={`Season ${season.number}`} />
                             <div>{season.episodes.length} Episodes</div>
                             <button onClick={() => handleSeasonClick(season.number)}>View Episodes</button>
@@ -193,13 +250,17 @@ const App = () => {
               ) : (
                 <>
                   <h2>Shows</h2>
-                  <Hero/>
+                  <Hero />
                   {showPreviews.map((show) => (
                     <ShowPreview key={show.id} show={show} favorites={favorites} setFavorites={setFavorites} handleShowClick={handleShowClick} />
                   ))}
-                  <FavoritesList favorites={favorites} showPreviews={showPreviews} removeFromFavorites={removeFromFavorites} />
                 </>
               )}
+              <FavoritesList
+            favoriteEpisodes={favoriteEpisodes}
+            addToFavoriteEpisodes={addToFavoriteEpisodes}
+            removeFromFavoriteEpisodes={removeFromFavoriteEpisodes}
+          />
             </div>
           )}
         </main>
@@ -209,5 +270,8 @@ const App = () => {
 };
 
 export default App;
+
+
+
 
 
